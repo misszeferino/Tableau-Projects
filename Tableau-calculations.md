@@ -26,7 +26,7 @@ END
 
 #### 2. Prior Period
 
-```bash
+```sql
 // WEEKDAY
 IF [Period Selector] = 'weekday' 
     AND DATEPART('weekday', [Full Date]) = DATEPART('weekday', DATEADD('week', -1, [0 - Yesterday]))
@@ -57,7 +57,7 @@ END
 
 #### 3. Prior Period for Bar Chart
 
-```bash
+```sql
 // MONTH, QUARTER, YEAR
 IF  [Period Selector] <> 'weekday' AND [Period Selector] <> 'day' AND [Period Selector] <> 'week'
     AND DATEPART([Period Selector], [Full Date]) = DATEPART([Period Selector], DATEADD('year', -1, [0 - Yesterday]))
@@ -85,7 +85,7 @@ END
 #### 4. Filter Condition for Bar Chart
 Filter for the bar chart of the Executive Summary, for “quarter” and “day”. To not show empty days/quarters.
 
-```bash
+```sql
 // FOR QUARTER AND DAY
 // Prior PERIOD
 IF [Period Selector] = 'quarter' 
@@ -120,17 +120,17 @@ END
 ## Outliers Detection - Filter (mean + 3 * stdev)
 
 1. Create a calculated field for the Standard deviation
-```bash
+```sql
 // Standard deviation
 { FIXED [Vehicle Service], [Model name], YEAR([Full Date]), MONTH([Full Date]): STDEV([Distance])}
 ```
 2. Create a calculated field for the Mean
-```bash
+```sql
 // Mean
 { FIXED [Vehicle Service], [Model name], YEAR([Full Date]), MONTH([Full Date]): AVG([Distance])}
 ```
 2. Create a calculated field for the outliers detection
-```bash
+```sql
 // Detect outliers - Use as a filter on a chart
 {FIXED [Trip Id]:
 IF SUM([Distance]) < SUM([Distance - Mean]) - (SUM([Distance - Stdev]) * [Distance - Stdvev]) THEN 'Lower Outlier'
@@ -146,33 +146,33 @@ Example based on the Canceled Trips dashboard, chart “Top Users by nb. cancele
    
 2. Create a T/F calculated field: Pagination Lower Range Limit
      
-```bash
+```sql
 [Pagination Lower Range] = 1
 ```
 
 3. Create a T/F calculated field: Paginagtion Upper Range Limit
    
-```bash
+```sql
 // Pagination Upper Range Limit
 [Pagination Lower Range] + 10 >= {FIXED : COUNTD([User Id])}
 ```
 4. Create a calculated field: Pagination Range Decrease
    
-```bash 
+```sql
 // Pagination Range Decrease
 IF [Pagination Lower Range Limit] THEN 1 
 ELSE [Pagination Lower Range] - 10 END
 ```
 5. Create a calculated field: Pagination Range Increase
    
-```bash
+```sql
 // Pagination Range Increase
 IF [Pagination Upper Range Limit] THEN [Pagination Lower Range] 
 ELSE [Pagination Lower Range] +10 END
 ```
 6. Create a filter: Pagination Filter (select True)
 
-```bash 
+```sql 
 // Filtering
 INDEX()>=[Pagination Lower Range] AND INDEX()<[Pagination Lower Range]+10
 ```
@@ -185,7 +185,7 @@ WINDOW_MAX([Count Canceled Trips])
 
 ## From UTC Datetime to Local Date Time
 
-```bash
+```sql
 // Check for America Time Zone
 IF CONTAINS([TZ_time_zone], "America/") = True THEN
     // DST Rules for America
