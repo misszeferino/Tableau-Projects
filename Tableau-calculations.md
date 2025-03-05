@@ -6,7 +6,7 @@
 
 #### 1. Current Period
 
-```bash
+```tableau
 // Current period
 IF [Full Date] <= [0 - Yesterday] AND
    DATETRUNC( [Period Selector], [Full Date]) = DATETRUNC([Period Selector], [0 - Yesterday]) 
