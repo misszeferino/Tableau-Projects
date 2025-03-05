@@ -143,8 +143,8 @@ ELSE 'Not Outlier' END
 Example based on the Canceled Trips dashboard, chart “Top Users by nb. canceled trips”
 
 1. Create a parameter: Pagination Lower Range ( integer, allowed value: all, current value: 1)
-2. 
-3. Create a T/F calculated field: Pagination Lower Range Limit
+   
+2. Create a T/F calculated field: Pagination Lower Range Limit
      
 ```bash
 [Pagination Lower Range] = 1
@@ -182,3 +182,89 @@ Create a calculated field: Pagination Range Ref Line
 ```bash
 WINDOW_MAX([Count Canceled Trips])
 ```
+
+## From UTC Datetime to Local Date Time
+
+```bash
+// Check for America Time Zone
+IF CONTAINS([TZ_time_zone], "America/") = True THEN
+    // DST Rules for America
+    IF (
+        // From the SECOND Sunday in March at 2AM    
+        (DATEPART('month', [T_last_update_date]) = 3 AND
+        [T_last_update_date] >= DATEADD('hour', 2, 
+            IF DATEPART('weekday', MAKEDATE(YEAR([T_last_update_date]), 3, 1), 'Sunday') <> 1
+            THEN DATEADD('day', 8 - DATEPART('weekday', MAKEDATE(YEAR([T_last_update_date]), 3, 1), 'Sunday') + 7, MAKEDATE(YEAR([T_last_update_date]), 3, 1))
+            ELSE DATEADD('day', 7, MAKEDATE(YEAR([T_last_update_date]), 3, 1))
+            END ))
+        OR
+        // Until the FIRST Sunday in November at 2AM    
+        (DATEPART('month', [T_last_update_date]) = 11 AND
+        [T_last_update_date] < DATEADD('hour', 2, 
+            IF DATEPART('weekday', MAKEDATE(YEAR([T_last_update_date]), 11, 1), 'Sunday') <> 1
+            THEN DATEADD('day', 8 - DATEPART('weekday', MAKEDATE(YEAR([T_last_update_date]), 11, 1), 'Sunday'), MAKEDATE(YEAR([T_last_update_date]), 11, 1))
+            ELSE DATEADD('day', -1 * DATEPART('weekday', MAKEDATE(YEAR([T_last_update_date]), 11, 1), 'Sunday') + 1, MAKEDATE(YEAR([T_last_update_date]), 11, 1))
+            END ))
+        OR
+        // All dates in between    
+        (DATEPART('month', [T_last_update_date]) > 3 AND DATEPART('month', [T_last_update_date]) < 11)
+    ) THEN
+        DATEADD('minute', [TZ_offset_dst], T_last_update_date)
+    ELSE
+        DATEADD('minute', [TZ_offset], T_last_update_date)
+    END
+
+// Check for Europe Time Zone
+ELSEIF CONTAINS([TZ_time_zone], "Europe/") = True THEN
+    // DST Rules for Europe
+    IF (
+        // From the last Sunday in March at 1AM      
+        (DATEPART('month', T_last_update_date) = 3 AND
+        T_last_update_date >= DATEADD('hour', 1, DATEADD('day', -1 * DATEPART('weekday', MAKEDATE(YEAR([T_last_update_date]), 3, 31), 'Sunday') + 1, MAKEDATE(YEAR([T_last_update_date]), 3, 31))))
+        OR
+        // Until the last Sunday in October at 1AM     
+        (DATEPART('month', T_last_update_date) = 10 AND
+        T_last_update_date < DATEADD('hour', 1, DATEADD('day', -1 * DATEPART('weekday', MAKEDATE(YEAR(T_last_update_date), 10, 31), 'Sunday') + 1, MAKEDATE(YEAR(T_last_update_date), 10, 31))))
+        OR
+        // All dates in between      
+        (DATEPART('month', T_last_update_date) > 3 AND DATEPART('month', T_last_update_date) < 10)
+    ) THEN
+        DATEADD('minute', [TZ_offset_dst], T_last_update_date)
+    ELSE
+        DATEADD('minute', [TZ_offset], T_last_update_date)
+    END
+
+// Check for Australia Time Zone
+ELSEIF CONTAINS([TZ_time_zone], "Australia/") = True THEN
+    // DST Rules for Australia
+    IF (
+        // From the first Sunday in October at 2AM      
+        (DATEPART('month', T_last_update_date) = 10 AND
+        T_last_update_date >= DATEADD('hour', 2, 
+            IF DATEPART('weekday', MAKEDATE(YEAR([T_last_update_date]), 10, 1), 'Sunday') <> 1
+            THEN DATEADD('day', 8 - DATEPART('weekday', MAKEDATE(YEAR([T_last_update_date]), 10, 1), 'Sunday'), MAKEDATE(YEAR([T_last_update_date]), 10, 1))
+            ELSE DATEADD('day', -1 * DATEPART('weekday', MAKEDATE(YEAR(T_last_update_date), 10, 1), 'Sunday') + 1, MAKEDATE(YEAR(T_last_update_date), 10, 1))
+            END ))
+        OR
+        // Until the first Sunday in April (Year +1) at 2AM      
+        (DATEPART('month', T_last_update_date) = 4 AND
+        T_last_update_date < DATEADD('hour', 2, 
+            IF DATEPART('weekday', MAKEDATE(YEAR([T_last_update_date]) + 1, 4, 1), 'Sunday') <> 1
+            THEN DATEADD('day', 8 - DATEPART('weekday', MAKEDATE(YEAR([T_last_update_date]) + 1, 4, 1), 'Sunday'), MAKEDATE(YEAR([T_last_update_date]) + 1, 4, 1))
+            ELSE DATEADD('day', -1 * DATEPART('weekday', MAKEDATE(YEAR(T_last_update_date) + 1 , 4, 1), 'Sunday') + 1, MAKEDATE(YEAR(T_last_update_date) + 1 , 4, 1))
+            END ))
+        OR
+        // All dates in between      
+        (DATEPART('month', T_last_update_date) > 10 OR DATEPART('month', T_last_update_date) < 4)
+    ) THEN
+        DATEADD('minute', [TZ_offset_dst], T_last_update_date)
+    ELSE
+        DATEADD('minute', [TZ_offset], T_last_update_date)
+    END
+
+// Default Case
+ELSE
+    DATEADD('minute', [TZ_offset], T_last_update_date)
+END
+```
+
